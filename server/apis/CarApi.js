@@ -8,11 +8,12 @@ module.exports = {
      */
      app.post("/api/findCar", async (req, res, next) => {
       if (req && req.body) {
-
+        console.log(req.body);
         // Get year,make, and model from the request
         let make = req.body["make"];
         let year = req.body["year"];
         let model = req.body["model"];
+        console.log(req.body);
 
         try {
           // Get the trim data for the requested car
@@ -45,6 +46,7 @@ module.exports = {
               make: make,
               year: year,
               model: model,
+              id: id,
             });
           } else {
             res.status(400).json({ error: "Bad Response From Fueleconomy Api" });
@@ -61,6 +63,57 @@ module.exports = {
     /**
      * Endpoint for getting info about a certain car given an id
      */
+    // app.post("/api/addCar", async (req, res, next) => {
+    //   // Get the car id for the request
+    //   console.log(req.body);
+    //   if (req && req.body) {
+    //     let id = req.body["id"];
+    //     let make = req.body["make"];
+    //     let year = req.body["year"];
+    //     let model = req.body["model"];
+    //     let email = req.body["email"];
+
+    //     try {
+    //       const resp = await axios.get(
+    //         `https://www.fueleconomy.gov/ws/rest/ympg/shared/ympgVehicle/${id}`,
+    //         {
+    //           headers: {
+    //             accept: "application/json",
+    //           },
+    //         }
+    //       );
+    //       console.log(resp);
+
+    //       // Ensure that respose was retrieved
+    //       if (resp && resp.data) {
+    //         await admin
+    //           .firestore()
+    //           .collection("users")
+    //           .doc(`${email}`)
+    //           .set({
+    //             car_data: {
+    //               id: id,
+    //               make: make,
+    //               year: year,
+    //               model: model,
+    //               mpg: resp.data["avgMpg"],
+    //             },
+    //           });
+
+    //         res.status(200).json({ info: "Car info updated" });
+    //       } else {
+    //         res
+    //           .status(400)
+    //           .json({ error: "Bad response from FuelEconomy Api" });
+    //       }
+    //     } catch (error) {
+    //       res.status(404).json({ error: "Error from fueleconomy api" });
+    //     }
+    //   } else {
+    //     res.status(204).json({ error: "No Request Body specified" });
+    //   }
+    // });
+
     app.post("/api/addCar", async (req, res, next) => {
       // Get the car id for the request
       console.log(req.body);
@@ -70,7 +123,7 @@ module.exports = {
         let year = req.body["year"];
         let model = req.body["model"];
         let email = req.body["email"];
-
+    
         try {
           const resp = await axios.get(
             `https://www.fueleconomy.gov/ws/rest/ympg/shared/ympgVehicle/${id}`,
@@ -81,28 +134,28 @@ module.exports = {
             }
           );
           console.log(resp);
-
-          // Ensure that respose was retrieved
+    
+          // Ensure that response was retrieved
           if (resp && resp.data) {
+            // Construct the car_data object
+            const carData = {
+              id: id,
+              make: make,
+              year: year,
+              model: model,
+              mpg: resp.data["avgMpg"],
+            };
+    
+            // Update only the car_data field of the user document
             await admin
               .firestore()
               .collection("users")
-              .doc(`${email}`)
-              .set({
-                car_data: {
-                  id: id,
-                  make: make,
-                  year: year,
-                  model: model,
-                  mpg: resp.data["avgMpg"],
-                },
-              });
-
+              .doc(email)
+              .update({ car_data: carData });
+    
             res.status(200).json({ info: "Car info updated" });
           } else {
-            res
-              .status(400)
-              .json({ error: "Bad response from FuelEconomy Api" });
+            res.status(400).json({ error: "Bad response from FuelEconomy Api" });
           }
         } catch (error) {
           res.status(404).json({ error: "Error from fueleconomy api" });
@@ -111,8 +164,6 @@ module.exports = {
         res.status(204).json({ error: "No Request Body specified" });
       }
     });
-
-   
     
   },
 };
