@@ -151,100 +151,111 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   return (
-    <Drawer
-      type="static"
-      openDrawerOffset={367}
-      onCloseStart={() => {
-        setDrawerBottomOpen(false);
-      }}
-      styles={{
-        main: { paddingBottom: 3 },
-      }}
-      tapToClose={false}
-      tweenHandler={Drawer.tweenPresets.parallax}
-      open={drawerBottomOpen}
-      side={"bottom"}
-      content={
-        <View style={styles.drawerOpen}>
-          <Text style={styles.addText}>Recommended Riders</Text>
-          <ScrollView
-            persistentScrollbar={true}
-            horizontal="true"
-            style={styles.scrollWindow}
-          >
-            <HStack>
-              {friends &&
-                friends.map((friend, i) => {
-                  return (
-                    <VStack key={i}>
-                      <TouchableOpacity
-                        style={styles.friendsButton}
-                        onPress={() => {
-                          {
-                            axios.post(
-                              "https://gasup-362104.uc.r.appspot.com/api/inviteFriend",
-                              {
-                                friend_email: friend.email,
-                                session: currentUser.email,
-                              }
-                            );
-                          }
-                        }}
-                      >
-                        <Text style={styles.logoLetter}>
-                          {friend.name
-                            ? friend.name.toUpperCase().charAt(0)
-                            : "Error"}
-                        </Text>
-                      </TouchableOpacity>
-                      <Text style={styles.names}>{friend.name}</Text>
-                    </VStack>
-                  );
-                })}
-
-              <VStack>
-                <TouchableOpacity
-                  onPress={() => {
-                    setDrawerBottomOpen(false);
-                    navigation.navigate("Search");
-                  }}
-                  style={styles.addButton}
-                >
-                  <Ionicons
-                    name="add-outline"
-                    size={32}
-                    style={styles.addIcon}
-                  />
-                </TouchableOpacity>
-                <Text style={styles.names}>Add new</Text>
+    <>
+    <ScrollView >
+    {/* {friends &&
+          friends.map((friend, i) => {
+            return (
+              <VStack key={i}>
+                <View>
+                  <TouchableOpacity
+                    style={styles.friendsButton}
+                    onPress={() => {
+                      axios.post(
+                        "https://road-share-backend-dp-nothing.vercel.app/api/inviteFriend",
+                        {
+                          friend_email: friend.email,
+                          session: currentUser.email,
+                        }
+                      );
+                    }}
+                  >
+                    <Text style={styles.logoLetter}>
+                      {friend.name
+                        ? friend.name.toUpperCase().charAt(0)
+                        : "Error"}
+                    </Text>
+                  </TouchableOpacity>
+                  <Text style={styles.names}>{friend.name}</Text>
+                </View>
               </VStack>
-            </HStack>
-          </ScrollView>
-
-          <View style={styles.ridingBox}>
-            <Text style={styles.currText}>Current Riders</Text>
-          </View>
-
-          <ScrollView
-            persistentScrollbar={true}
-            horizontal="true"
-            style={styles.scrollWindow}
-          >
-            <HStack>
-              <VStack>
-                <TouchableOpacity
-                  style={styles.friendsButton}
-                  onPress={getFriends}
-                >
-                  <Text style={styles.logoLetter}>J</Text>
-                </TouchableOpacity>
-                <Text style={styles.names}>Jason</Text>
-              </VStack>
-            </HStack>
-          </ScrollView>
+            );
+          })} */}
+        <View style={styles.topNav}>
+          <HStack>
+            <Text style={styles.logoText}>RoadShare</Text>
+            {/* <Image
+              style={styles.Logo}
+              source={require("../../assets/images/dragonLogo.png")}
+            /> */}
+            <TouchableOpacity>
+              <Ionicons
+                onPress={() => {
+                  console.log("set");
+                  navigation.navigate("Profile");
+                }}
+                name="person-circle"
+                size={32}
+                style={styles.iconRight}
+              />
+            </TouchableOpacity>
+          </HStack>
         </View>
-      }
-    >
+
+        <View>
+          <MapView
+            showsUserLocation={inSession}
+            followsUserLocation={inSession}
+            style={styles.map}
+          />
+        </View>
+
+        {!drawerBottomOpen && (
+          <TouchableOpacity
+            style={inSession ? styles.stopButton : styles.goButton}
+            onPress={() => {
+              if (inSession) {
+                handleStop();
+              } else {
+                handleGo();
+              }
+            }}
+          >
+            <Text style={styles.goText}>{inSession ? "STOP" : "GO"}</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.drawerUp}>
+          <Ionicons
+            onPress={() => {
+              getFriends();
+              setDrawerBottomOpen(!drawerBottomOpen);
+            }}
+            name={drawerBottomOpen ? "chevron-down-outline" : "chevron-up-outline"}
+            size={32}
+            style={styles.chevronDown}
+          />
+        </View>
+      
+        <HStack>
+        <VStack>
+          <TouchableOpacity
+            onPress={() => {
+              setDrawerBottomOpen(false);
+              navigation.navigate("Search");
+            }}
+            style={styles.addButton}
+          >
+            <Ionicons
+              name="add-outline"
+              size={32}
+              style={styles.addIcon}
+            />
+          </TouchableOpacity>
+          <Text style={styles.names}>Add new</Text>
+        </VStack>
+      </HStack>
+            
       <View style={styles.mainContainer}>
         <View style={styles.centeredView}>
           <Modal
@@ -262,7 +273,7 @@ export default function HomeScreen({ navigation }) {
                   style={[styles.button, styles.buttonClose]}
                   onPress={async () => {
                     const res = await axios.post(
-                      "https://gasup-362104.uc.r.appspot.com/api/acceptInvite",
+                      "https://road-share-backend-dp-nothing.vercel.app/api/acceptInvite",
                       {
                         email: currentUser.email,
                       }
@@ -280,7 +291,6 @@ export default function HomeScreen({ navigation }) {
                       .onSnapshot((docSnapshot) => {
                         docSnapshot.docChanges().forEach((change) => {
                           if (change.type === "removed") {
-                            // end of session
                             handleStop();
                           } else {
                             console.log("something else");
@@ -311,67 +321,15 @@ export default function HomeScreen({ navigation }) {
             </View>
           </Modal>
         </View>
-        {/* Top Nav */}
-        <View style={styles.topNav}>
-          <HStack>
-            <Text style={styles.logoText}>GasUp</Text>
-            <Image
-              style={styles.Logo}
-              source={require("../../assets/images/dragonLogo.png")}
-            />
-            <TouchableOpacity>
-              <Ionicons
-                onPress={() => {
-                  console.log("set");
-                  navigation.navigate("Profile");
-                }}
-                name="person-circle"
-                size={32}
-                style={styles.iconRight}
-              />
-            </TouchableOpacity>
-          </HStack>
-        </View>
-        {/* Map View */}
-        <View>
-          <MapView
-            showsUserLocation={inSession}
-            followsUserLocation={inSession}
-            style={styles.map}
-          />
-        </View>
 
-        {!drawerBottomOpen && (
-          <TouchableOpacity
-            style={inSession ? styles.stopButton : styles.goButton}
-            onPress={() => {
-              if (inSession) {
-                handleStop();
-              } else {
-                handleGo();
-              }
-            }}
-          >
-            <Text style={styles.goText}>{inSession ? "STOP" : "GO"}</Text>
-          </TouchableOpacity>
-        )}
-        <View style={styles.drawerUp}>
-          <Ionicons
-            onPress={() => {
-              getFriends();
-              setDrawerBottomOpen(drawerBottomOpen ? false : true);
-            }}
-            name={
-              drawerBottomOpen ? "chevron-down-outline" : "chevron-up-outline"
-            }
-            size={32}
-            style={styles.chevronDown}
-          />
-        </View>
-      </View>
-    </Drawer>
+       
+    </View>
+    </ScrollView>
+    </>
   );
 }
+
+
 
 // COMPONENT STYLES
 const styles = StyleSheet.create({
@@ -388,11 +346,22 @@ const styles = StyleSheet.create({
     float: "left",
     marginTop: 2,
   },
-
+  map: {
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").height * 0.8,
+    // height: 750,
+  },
+  topNav: {
+    marginTop: 40,
+    // borderBottomWidth: 2,
+    // borderBottomColor: "#2F6424",
+    marginBottom: 15,
+  },
   logoText: {
+    marginTop:10,
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 45,
+    fontSize: 25,
     // flexDirection: 'row',
     color: "#2F6424",
     fontWeight: "bold",
@@ -400,16 +369,16 @@ const styles = StyleSheet.create({
   },
   iconRight: {
     color: "#2F6424",
-    justifyContent: "right",
+    justifyContent: "flex-end",
     width: 30,
     height: 30,
     position: "absolute",
-    marginLeft: 78,
+    marginLeft: 168,
     marginTop: 5,
   },
   infoBox: {
     color: "#2F6424",
-    justifyContent: "right",
+    justifyContent: "flex-end",
     width: 50,
     height: 50,
     position: "absolute",
@@ -439,7 +408,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 50,
-    bottom: 150,
+    bottom: 230,
     left: Dimensions.get("window").width / 2 - 37,
   },
   stopButton: {
@@ -450,7 +419,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 50,
-    bottom: 150,
+    bottom: 230,
     left: Dimensions.get("window").width / 2 - 37,
   },
   goText: {
@@ -483,8 +452,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#828282",
   },
   drawerUp: {
-    paddingBottom: 15,
-    backgroundColor: "#5F5F5F",
+    paddingBottom: 5,
+    backgroundColor: "#212427",
     width: Dimensions.get("window").width,
     // justifyContent: "center",
     // position: "relative",
@@ -518,11 +487,11 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     marginRight: 15,
     justifyContent: "center",
-    borderRadius: 50,
-    backgroundColor: "#828282",
+    borderRadius: 30,
+    backgroundColor: "#212427",
   },
   addIcon: {
-    color: "#78B293",
+    color: "white",
     width: 30,
     height: 30,
     justifyContent: "center",
@@ -537,7 +506,7 @@ const styles = StyleSheet.create({
     marginLeft: 14,
   },
   names: {
-    color: "white",
+    color: "#212427",
     fontSize: 20,
     position: "relative",
     justifyContent: "center",
@@ -600,6 +569,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "center",
   },
   chevronDown: {
+    color:"white",
     justifyContent: "center",
     alignSelf: "center",
   },
