@@ -9,7 +9,6 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
-  Overlay,
 } from "react-native";
 import firebase from "firebase/app";
 import "firebase/auth";
@@ -17,23 +16,25 @@ import MapView from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { HStack, VStack } from "react-native-flex-layout";
 import { useAuth } from "../contexts/AuthContext";
-import Drawer from "react-native-drawer";
 import { useGPS } from "../contexts/LocationContext";
 import axios from "axios";
 
 const COORDINATES = [
   { lat: -117.17282, long: 32.71204 },
+  { lat: -127.17288, long: 32.71225 },
+  { lat: -147.17293, long: 32.71244 },
+  { lat: -167.17292, long: 32.71256 },
+  { lat: -187.17298, long: 32.712603 },
+  { lat: -127.17314, long: 32.71259 },
+  { lat: -117.17334, long: 32.71254 },
 ];
 
 export default function HomeScreen({ navigation }) {
-  console.log("1");
   const { currentUser } = useAuth();
-  console.log("3");
   const { GPSLocation } = useGPS();
-  const [coordinateList, setCoordinateList] = useState(new Array());
+  const [coordinateList, setCoordinateList] = useState([]);
 
   const firestore = firebase.firestore();
-  console.log("4");
   const [drawerBottomOpen, setDrawerBottomOpen] = useState(false);
   const [friends, setFriends] = useState([]);
   const [inSession, setInSession] = useState(false);
@@ -44,7 +45,6 @@ export default function HomeScreen({ navigation }) {
   const inviteListener = useRef(null);
   const timeout = useRef(null);
 
-  console.log("2");
   async function handleStop() {
     try {
       clearInterval(timeout.current);
@@ -54,7 +54,7 @@ export default function HomeScreen({ navigation }) {
       } else {
         console.log("could not clear observer");
       }
-      await axios.post("https://gasup-362104.uc.r.appspot.com/api/endDrive", {
+      await axios.post("https://road-share-backend-dp-nothing.vercel.app/api/endDrive", {
         session_id: currentUser.email,
         total_miles: totalDistance.current,
       });
@@ -62,6 +62,7 @@ export default function HomeScreen({ navigation }) {
   }
 
   async function handleGo() {
+    console.log("goclicked");
     try {
       console.log("location", GPSLocation);
       await firestore.collection("sessions").doc(currentUser.email).set({
@@ -70,12 +71,10 @@ export default function HomeScreen({ navigation }) {
         riders: [],
         cost: 0,
       });
-      // Just posted the new doc to the 'searching' collection.
       setInSession(true);
       clearInterval(timeout.current);
 
       timeout.current = setInterval(async () => {
-        // Add to the coordinates
         let coordinateListCopy = coordinateList;
         setCoordinateList(
           coordinateListCopy.push({
@@ -83,17 +82,16 @@ export default function HomeScreen({ navigation }) {
             long: GPSLocation["coords"]["longitude"],
           })
         );
-        //Simulate how it will actually work instead use head coded cooordinates
         if (coordinateList.length % 10 == 0) {
           try {
             console.log(COORDINATES);
             const apiResult = await axios.post(
-              "https://gasup-362104.uc.r.appspot.com/api/mapBox",
-              COORDINATES
+              "https://road-share-backend-dp-nothing.vercel.app/api/mapBox",
+              COORDINATES 
             );
+            
             console.log(apiResult.data["miles"]);
-            totalDistance.current =
-              totalDistance.current + apiResult.data["miles"];
+            totalDistance.current + apiResult.data["miles"];
             console.log("Total ", totalDistance);
           } catch (error) {
             console.log("Error: " + error);
@@ -115,9 +113,24 @@ export default function HomeScreen({ navigation }) {
     }
   }
 
+  function getFriends() {
+    console.log("get friends.");
+    axios
+      .post("https://road-share-backend-dp-nothing.vercel.app/api/getFriends", {
+        email: currentUser.email,
+      })
+      .then((res) => {
+        if (res && res.data) {
+          console.log(res.data);
+          setFriends(res.data);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
 
   useEffect(() => {
-    // Redirects user if not logged in.
     if (!currentUser) {
       navigation.navigate("Login");
     } else {
@@ -126,11 +139,7 @@ export default function HomeScreen({ navigation }) {
       console.log(currentUser.email);
       inviteListener.current = firestore
         .collection("invites")
-        .where(
-          firebase.firestore.FieldPath.documentId(),
-          "==",
-          currentUser.email
-        )
+        .where(firebase.firestore.FieldPath.documentId(), "==", currentUser.email)
         .onSnapshot((docSnapshot) => {
           docSnapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
